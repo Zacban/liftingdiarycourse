@@ -1,48 +1,20 @@
-"use client";
-
-import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "./DatePicker";
+import { getWorkoutsForDate } from "@/data/workouts";
 import { formatDate } from "@/lib/date";
 
-type Set = {
-  reps: number;
-  weight: number;
+type Props = {
+  searchParams: Promise<{ date?: string }>;
 };
 
-type Exercise = {
-  name: string;
-  sets: Set[];
-};
+export default async function DashboardPage({ searchParams }: Props) {
+  const { date: dateParam } = await searchParams;
+  const date = dateParam
+    ? new Date(`${dateParam}T00:00:00`)
+    : new Date();
 
-type Workout = {
-  id: string;
-  name: string;
-  exercises: Exercise[];
-};
-
-const MOCK_WORKOUTS: Workout[] = [
-  {
-    id: "1",
-    name: "Push Day",
-    exercises: [
-      { name: "Bench Press", sets: [{ reps: 5, weight: 100 }, { reps: 5, weight: 100 }, { reps: 4, weight: 100 }] },
-      { name: "Overhead Press", sets: [{ reps: 8, weight: 60 }, { reps: 8, weight: 60 }] },
-      { name: "Tricep Pushdown", sets: [{ reps: 12, weight: 30 }, { reps: 12, weight: 30 }] },
-    ],
-  },
-  {
-    id: "2",
-    name: "Cardio",
-    exercises: [
-      { name: "Treadmill", sets: [{ reps: 1, weight: 0 }] },
-    ],
-  },
-];
-
-export default function DashboardPage() {
-  const [date, setDate] = useState<Date>(new Date());
+  const workouts = await getWorkoutsForDate(date);
 
   return (
     <div className="flex flex-col flex-1 bg-zinc-50 dark:bg-black">
@@ -61,12 +33,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
               Select Date
             </h2>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => { if (d) setDate(d); }}
-              className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3"
-            />
+            <DatePicker selected={date} />
           </div>
 
           <div className="flex flex-col gap-4 flex-1 min-w-0">
@@ -74,12 +41,12 @@ export default function DashboardPage() {
               Workouts for {formatDate(date)}
             </h2>
 
-            {MOCK_WORKOUTS.length === 0 ? (
+            {workouts.length === 0 ? (
               <p className="text-sm text-zinc-400 dark:text-zinc-500">
                 No workouts logged for this date.
               </p>
             ) : (
-              MOCK_WORKOUTS.map((workout) => (
+              workouts.map((workout) => (
                 <Card key={workout.id} className="shadow-none border-zinc-200 dark:border-zinc-800">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
@@ -93,20 +60,20 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="flex flex-col gap-3">
-                      {workout.exercises.map((exercise, i) => (
-                        <li key={i} className="flex flex-col gap-1">
+                      {workout.exercises.map((exercise) => (
+                        <li key={exercise.id} className="flex flex-col gap-1">
                           <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                             {exercise.name}
                           </span>
                           <div className="flex flex-wrap gap-1.5">
-                            {exercise.sets.map((set, j) => (
+                            {exercise.sets.map((set) => (
                               <span
-                                key={j}
+                                key={set.id}
                                 className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                               >
-                                {set.weight > 0
-                                  ? `${set.reps} × ${set.weight} kg`
-                                  : `${set.reps} set`}
+                                {set.weightKg && parseFloat(set.weightKg) > 0
+                                  ? `${set.reps} × ${set.weightKg} kg`
+                                  : `${set.reps} rep${set.reps !== 1 ? "s" : ""}`}
                               </span>
                             ))}
                           </div>
