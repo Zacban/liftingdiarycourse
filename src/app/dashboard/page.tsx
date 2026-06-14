@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DatePicker } from "./DatePicker";
 import { getWorkoutsForDate } from "@/data/workouts";
 import { formatDate } from "@/lib/date";
+import Link from "next/link";
+import { format } from "date-fns";
 
 type Props = {
   searchParams: Promise<{ date?: string }>;
@@ -37,9 +40,16 @@ export default async function DashboardPage({ searchParams }: Props) {
           </div>
 
           <div className="flex flex-col gap-4 flex-1 min-w-0">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Workouts for {formatDate(date)}
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                Workouts for {formatDate(date)}
+              </h2>
+              <Button asChild size="sm">
+                <Link href={`/dashboard/workout/new?date=${format(date, "yyyy-MM-dd")}`}>
+                  New Workout
+                </Link>
+              </Button>
+            </div>
 
             {workouts.length === 0 ? (
               <p className="text-sm text-zinc-400 dark:text-zinc-500">
@@ -53,10 +63,13 @@ export default async function DashboardPage({ searchParams }: Props) {
                       <CardTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                         {workout.name}
                       </CardTitle>
-                      <Badge variant="secondary">
-                        {workout.exercises.length} exercise{workout.exercises.length !== 1 ? "s" : ""}
-                      </Badge>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {format(workout.startedAt, "HH:mm")}
+                      </span>
                     </div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      {workout.exercises.length} exercise{workout.exercises.length !== 1 ? "s" : ""}
+                    </p>
                   </CardHeader>
                   <CardContent>
                     <ul className="flex flex-col gap-3">

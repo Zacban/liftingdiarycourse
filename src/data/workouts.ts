@@ -3,6 +3,13 @@ import { db } from "@/db";
 import { workoutsTable, workoutExercisesTable, exercisesTable, setsTable } from "@/db/schema";
 import { and, eq, gte, lt } from "drizzle-orm";
 
+export async function createWorkout(name: string, startedAt: Date) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated");
+
+  return db.insert(workoutsTable).values({ name, startedAt, userId }).returning();
+}
+
 type WorkoutSet = {
   id: number;
   setNumber: number;
@@ -20,6 +27,7 @@ type WorkoutExercise = {
 export type WorkoutWithExercises = {
   id: number;
   name: string;
+  startedAt: Date;
   exercises: WorkoutExercise[];
 };
 
@@ -36,6 +44,7 @@ export async function getWorkoutsForDate(date: Date): Promise<WorkoutWithExercis
     .select({
       workoutId: workoutsTable.id,
       workoutName: workoutsTable.name,
+      workoutStartedAt: workoutsTable.startedAt,
       workoutExerciseId: workoutExercisesTable.id,
       exerciseName: exercisesTable.name,
       exerciseOrder: workoutExercisesTable.order,
@@ -62,7 +71,7 @@ export async function getWorkoutsForDate(date: Date): Promise<WorkoutWithExercis
 
   for (const row of rows) {
     if (!workoutMap.has(row.workoutId)) {
-      workoutMap.set(row.workoutId, { id: row.workoutId, name: row.workoutName, exercises: [] });
+      workoutMap.set(row.workoutId, { id: row.workoutId, name: row.workoutName, startedAt: row.workoutStartedAt, exercises: [] });
     }
 
     if (row.workoutExerciseId == null || row.exerciseName == null) continue;
